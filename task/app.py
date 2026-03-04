@@ -46,7 +46,10 @@ class GeneralPurposeAgentApplication(ChatCompletion):
         # 5. Add PythonCodeInterpreterTool with DIAL_ENDPOINT, `http://localhost:8050/mcp` mcp_url, tool_name is
         #    `execute_code`, more detailed about tools see in repository https://github.com/khshanovskyi/mcp-python-code-interpreter
         # 6. Extend tools with MCP tools from `http://localhost:8051/mcp` (use method `_get_mcp_tools`)
-        return []
+        tools: list[BaseTool] = [
+            FileContentExtractionTool(DIAL_ENDPOINT),
+        ]
+        return tools
 
     async def chat_completion(self, request: Request, response: Response) -> None:
         if not self.tools:
