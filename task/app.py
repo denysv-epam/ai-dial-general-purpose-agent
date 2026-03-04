@@ -32,7 +32,7 @@ class GeneralPurposeAgentApplication(ChatCompletion):
         # 3. Get tools, iterate through them and add them to created list as MCPTool where the client will be created
         #    MCPClient and mcp_tool_model will be the tool itself (see what `mcp_client.get_tools` returns).
         # 4. Return created tool list
-        raise NotImplementedError()
+        return []
 
     async def _create_tools(self) -> list[BaseTool]:
         #TODO:
@@ -49,24 +49,26 @@ class GeneralPurposeAgentApplication(ChatCompletion):
         return []
 
     async def chat_completion(self, request: Request, response: Response) -> None:
-        #TODO:
-        # 1. If `self.tools` are absent then call `_create_tools` method and assign to the `self.tools`
-        # 2. Create `choice` (`with response.create_single_choice() as choice:`) and:
-        #   - Create GeneralPurposeAgent with:
-        #       - endpoint=DIAL_ENDPOINT
-        #       - system_prompt=SYSTEM_PROMPT
-        #       - tools=self.tools
-        #   - call `handle_request` on created agent with:
-        #       - choice=choice
-        #       - deployment_name=DEPLOYMENT_NAME
-        #       - request=request
-        #       - response=response
-        raise NotImplementedError()
+        if not self.tools:
+            self.tools = await self._create_tools()
 
-#TODO:
-# 1. Create DIALApp
-# 2. Create GeneralPurposeAgentApplication
-# 3. Add to created DIALApp chat_completion with:
-#       - deployment_name="general-purpose-agent"
-#       - impl=agent_app
-# 4. Run it with uvicorn: `uvicorn.run({CREATED_DIAL_APP}, port=5030, host="0.0.0.0")`
+        with response.create_single_choice() as choice:
+            agent = GeneralPurposeAgent(
+                endpoint=DIAL_ENDPOINT,
+                system_prompt=SYSTEM_PROMPT,
+                tools=self.tools,
+            )
+            await agent.handle_request(
+                choice=choice,
+                deployment_name=DEPLOYMENT_NAME,
+                request=request,
+                response=response,
+            )
+
+app: DIALApp = DIALApp()
+agent_app = GeneralPurposeAgentApplication()
+app.add_chat_completion("general-purpose-agent", agent_app)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, port=5030, host="0.0.0.0")
