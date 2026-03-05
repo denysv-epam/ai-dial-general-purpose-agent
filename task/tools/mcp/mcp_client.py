@@ -20,47 +20,94 @@ class MCPClient:
     @classmethod
     async def create(cls, mcp_server_url: str) -> 'MCPClient':
         """Async factory method to create and connect MCPClient"""
-        #TODO:
-        # 1. Create instance of MCPClient with `cls`
-        # 2. Connect to MCP server
-        # 3. return created instance
-        raise NotImplementedError()
+        instance = cls(mcp_server_url)
+        await instance.connect()
+        return instance
 
     async def connect(self):
         """Connect to MCP server"""
-        #TODO:
-        # 1. Check if session is present, if yes just return to finsh execution
-        # 2. Call `streamablehttp_client` method with `server_url` and set as `self._streams_context`
-        # 3. Enter `self._streams_context`, result set as `read_stream, write_stream, _`
-        # 4. Create ClientSession with streams from above and set as `self._session_context`
-        # 5. Enter `self._session_context` and set as self.session
-        # 6. Initialize session and print its result to console
-        raise NotImplementedError()
+        if self.session:
+            return
+
+        self._streams_context = streamablehttp_client(self.server_url)
+        read_stream, write_stream, _ = await self._streams_context.__aenter__()
+
+        self._session_context = ClientSession(read_stream, write_stream)
+        self.session = await self._session_context.__aenter__()
+
+        init_result = await self.session.initialize()
+        if hasattr(init_result, "model_dump_json"):
+            print(init_result.model_dump_json(indent=2))
+        else:
+            print(init_result)
 
 
     async def get_tools(self) -> list[MCPToolModel]:
         """Get available tools from MCP server"""
-        #TODO: Get and return MCP tools as list of MCPToolModel
-        raise NotImplementedError()
+        if not self.session:
+            raise RuntimeError("MCP client not connected. Call connect() first.")
+
+        tools = await self.session.list_tools()
+        return [
+            MCPToolModel(
+                name=tool.name,
+                description=tool.description or "",
+                parameters=tool.inputSchema or {"type": "object", "properties": {}},
+            )
+            for tool in tools.tools
+        ]
 
     async def call_tool(self, tool_name: str, tool_args: dict[str, Any]) -> Any:
         """Call a tool on the MCP server"""
-        #TODO: Make tool call and return its result. Do it in proper way (it returns array of content and you need to handle it properly)
-        raise NotImplementedError()
+        if not self.session:
+            raise RuntimeError("MCP client not connected. Call connect() first.")
+
+        tool_result: CallToolResult = await self.session.call_tool(tool_name, tool_args)
+        content_blocks = tool_result.content or []
+        if not content_blocks:
+            return ""
+
+        text_blocks = [
+            block.text for block in content_blocks if isinstance(block, TextContent)
+        ]
+        if len(text_blocks) == len(content_blocks):
+            return "\n".join(text_blocks)
+
+        first_block = content_blocks[0]
+        if isinstance(first_block, TextContent):
+            return first_block.text
+
+        return content_blocks
 
     async def get_resource(self, uri: AnyUrl) -> str | bytes:
         """Get specific resource content"""
-        #TODO: Get and return resource. Resources can be returned as TextResourceContents and BlobResourceContents, you
-        #      need to return resource value (text or blob)
-        raise NotImplementedError()
+        if not self.session:
+            raise RuntimeError("MCP client not connected. Call connect() first.")
+
+        result: ReadResourceResult = await self.session.read_resource(uri)
+        contents = result.contents or []
+        if not contents:
+            return ""
+
+        text_chunks: list[str] = []
+        for content in contents:
+            if isinstance(content, TextResourceContents):
+                text_chunks.append(content.text)
+            elif isinstance(content, BlobResourceContents):
+                return content.blob
+
+        return "\n".join(text_chunks)
 
     async def close(self):
         """Close connection to MCP server"""
-        #TODO:
-        # 1. Close `self._session_context`
-        # 2. Close `self._streams_context`
-        # 3. Set session, _session_context and _streams_context as None
-        raise NotImplementedError()
+        if self._session_context:
+            await self._session_context.__aexit__(None, None, None)
+        if self._streams_context:
+            await self._streams_context.__aexit__(None, None, None)
+
+        self.session = None
+        self._session_context = None
+        self._streams_context = None
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -71,4 +118,3 @@ class MCPClient:
         """Async context manager exit"""
         await self.close()
         return False
-
