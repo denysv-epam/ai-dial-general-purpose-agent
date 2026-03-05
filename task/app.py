@@ -48,6 +48,7 @@ class GeneralPurposeAgentApplication(ChatCompletion):
         # 6. Extend tools with MCP tools from `http://localhost:8051/mcp` (use method `_get_mcp_tools`)
         document_cache = DocumentCache.create()
         tools: list[BaseTool] = [
+            ImageGenerationTool(DIAL_ENDPOINT),
             FileContentExtractionTool(DIAL_ENDPOINT),
             RagTool(DIAL_ENDPOINT, DEPLOYMENT_NAME, document_cache),
         ]
