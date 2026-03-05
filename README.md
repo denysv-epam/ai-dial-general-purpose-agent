@@ -132,7 +132,7 @@ Flow: <img src="py_interpreter_flow.png">
         mem_limit: 2G
         cpus: 2.0
     ```
-2. Provide implementation for the [tools/deployment/mcp_tool.py](task/tools/mcp/interpreter/python_code_interpreter_tool.py) according to TODO
+2. Provide implementation for the [tools/py_interpreter/python_code_interpreter_tool.py](task/tools/py_interpreter/python_code_interpreter_tool.py) according to TODO
 3. Add Python Code Interpreter tool to [app.py](task/app.py), url http://localhost:8050/mcp
 4. Restart [docker-compose](docker-compose.yml)
 5. Test it:
