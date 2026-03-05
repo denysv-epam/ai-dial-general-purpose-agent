@@ -75,6 +75,16 @@ services:
     mem_limit: 512M
     cpus: 0.5
 
+  python-interpreter:
+    image: khshanovskyi/python-code-interpreter-mcp-server:latest
+    ports:
+      - "8050:8000"
+    environment:
+      LOG_LEVEL: "INFO"
+    restart: unless-stopped
+    mem_limit: 2G
+    cpus: 2.0
+
 volumes:
   core-logs:
   core-data:

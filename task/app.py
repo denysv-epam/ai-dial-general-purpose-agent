@@ -42,6 +42,13 @@ class GeneralPurposeAgentApplication(ChatCompletion):
             FileContentExtractionTool(DIAL_ENDPOINT),
             RagTool(DIAL_ENDPOINT, DEPLOYMENT_NAME, document_cache),
         ]
+        tools.append(
+            await PythonCodeInterpreterTool.create(
+                mcp_url="http://localhost:8050/mcp",
+                tool_name="execute_code",
+                dial_endpoint=DIAL_ENDPOINT,
+            )
+        )
         tools.extend(await self._get_mcp_tools("http://localhost:8051/mcp"))
         return tools
 
