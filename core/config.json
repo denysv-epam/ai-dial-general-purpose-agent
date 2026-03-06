@@ -28,6 +28,12 @@
       "endpoint": "http://adapter-dial:5000/openai/deployments/dall-e-3/chat/completions",
       "iconUrl": "http://localhost:3001/gpt3.svg",
       "type": "chat"
+    },
+    "claude-haiku-4-5": {
+      "displayName": "Claude Sonnet 4.5",
+      "endpoint": "http://adapter-dial:5000/openai/deployments/claude-haiku-4-5/chat/completions",
+      "iconUrl": "https://chat.lab.epam.com/themes/anthropic.svg",
+      "type": "chat"
     }
   },
   "keys": {
